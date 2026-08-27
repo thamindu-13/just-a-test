@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AL Maths Solver</title>
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    .box {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        width: 350px;
+        text-align: center;
+    }
+    h2 {
+        color: #667eea;
+    }
+    input {
+        width: 90%;
+        padding: 12px;
+        font-size: 18px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+    button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        width: 100%;
+    }
+    button:hover {
+        background: #764ba2;
+    }
+    #answer {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f0f0ff;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        min-height: 20px;
+    }
+</style>
+</head>
+<body>
+
+<div class="box">
+    <h2>📐 Maths ගාන දාන්න</h2>
+    <p>උදා: 2x+3=11  හෝ  5*2+4  හෝ  x^2-5x+6=0</p>
+    <input type="text" id="sum" placeholder="මෙන්න ගාන ටයිප් කරන්න">
+    <button
