@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Car Jump Game</title>
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
   body {
     background: linear-gradient(to top, #87CEEB 0%, #E0F6FF 50%, #87CEEB 100%);
     display: flex;
@@ -16,7 +16,8 @@
     overflow: hidden;
   }
   #game {
-    width: 800px;
+    width: 100%;
+    max-width: 800px;
     height: 300px;
     border: 3px solid #333;
     background: #f0f0f0;
@@ -26,9 +27,14 @@
   .ground {
     position: absolute;
     bottom: 0;
-    width: 100%;
+    width: 200%;
     height: 40px;
     background: repeating-linear-gradient(90deg, #555 0px, #555 20px, #777 20px, #777 40px);
+    animation: moveGround 2s linear infinite;
+  }
+  @keyframes moveGround {
+    from { transform: translateX(0); }
+    to { transform: translateX(-40px); }
   }
   #car {
     width: 60px;
@@ -38,8 +44,12 @@
     position: absolute;
     bottom: 40px;
     left: 80px;
+    transition: transform 0.1s;
   }
-  #car::before {
+  #car.jump {
+    transform: rotate(-5deg);
+  }
+  #car::before, #car::after {
     content: '';
     position: absolute;
     width: 15px;
@@ -47,17 +57,13 @@
     background: #333;
     border-radius: 50%;
     bottom: -8px;
-    left: 5px;
+    animation: wheel 0.3s linear infinite;
   }
-  #car::after {
-    content: '';
-    position: absolute;
-    width: 15px;
-    height: 15px;
-    background: #333;
-    border-radius: 50%;
-    bottom: -8px;
-    right: 5px;
+  #car::before { left: 5px; }
+  #car::after { right: 5px; }
+  @keyframes wheel {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
   .stone {
     width: 25px;
@@ -102,8 +108,8 @@
   <div class="ground"></div>
   <div id="car"></div>
   <div id="score">Score: 0</div>
-  <div id="start">UP Arrow එක ඔබන්න<br>Game පටන් ගන්න</div>
-  <div id="gameOver">GAME OVER<br><span style="font-size:18px">Space ඔබන්න නැවත පටන් ගන්න</span></div>
+  <div id="start">Screen එක Touch කරන්න<br>හෝ UP Arrow ඔබන්න</div>
+  <div id="gameOver">GAME OVER<br><span style="font-size:18px">Touch කරන්න නැවත පටන් ගන්න</span></div>
 </div>
 
 <script>
@@ -119,23 +125,26 @@ let isGameStarted = false;
 let score = 0;
 let stones = [];
 let gameSpeed = 6;
+let stoneInterval;
 
 function jump() {
   if (isJumping || isGameOver) return;
   isJumping = true;
+  car.classList.add('jump');
   let jumpHeight = 0;
   let up = true;
   
   let jumpInterval = setInterval(() => {
     if (up) {
-      jumpHeight += 7;
+      jumpHeight += 8;
       car.style.bottom = 40 + jumpHeight + 'px';
       if (jumpHeight >= 100) up = false;
     } else {
-      jumpHeight -= 7;
+      jumpHeight -= 8;
       car.style.bottom = 40 + jumpHeight + 'px';
       if (jumpHeight <= 0) {
         car.style.bottom = '40px';
+        car.classList.remove('jump');
         clearInterval(jumpInterval);
         isJumping = false;
       }
@@ -147,7 +156,7 @@ function createStone() {
   if (isGameOver) return;
   let stone = document.createElement('div');
   stone.classList.add('stone');
-  stone.style.left = '800px';
+  stone.style.left = game.offsetWidth + 'px';
   game.appendChild(stone);
   stones.push(stone);
 }
@@ -162,10 +171,10 @@ function moveStones() {
     let stoneRect = stone.getBoundingClientRect();
     
     if (
-      carRect.left < stoneRect.right &&
-      carRect.right > stoneRect.left &&
-      carRect.bottom > stoneRect.top &&
-      carRect.top < stoneRect.bottom
+      carRect.left < stoneRect.right - 5 &&
+      carRect.right > stoneRect.left + 5 &&
+      carRect.bottom > stoneRect.top + 5 &&
+      carRect.top < stoneRect.bottom - 5
     ) {
       gameOver();
     }
@@ -175,7 +184,7 @@ function moveStones() {
       stones.splice(index, 1);
       score++;
       scoreEl.innerText = 'Score: ' + score;
-      if (score % 10 === 0) gameSpeed += 0.5; // speed වැඩි වෙනවා
+      if (score % 5 === 0) gameSpeed += 0.4; // speed වැඩි වෙනවා
     }
   });
 }
@@ -189,6 +198,7 @@ function gameLoop() {
 
 function gameOver() {
   isGameOver = true;
+  clearInterval(stoneInterval);
   gameOverEl.style.display = 'block';
   stones.forEach(s => s.remove());
   stones = [];
@@ -203,12 +213,12 @@ function startGame() {
   gameOverEl.style.display = 'none';
   startEl.style.display = 'none';
   
-  // harithara stone spawn
-  setInterval(() => {
+  stoneInterval = setInterval(() => {
     if (!isGameOver) createStone();
-  }, 1500);
+  }, 1400);
 }
 
+// KEYBOARD CONTROL
 document.addEventListener('keydown', (e) => {
   if (e.code === 'ArrowUp') {
     if (!isGameStarted) startGame();
@@ -217,6 +227,21 @@ document.addEventListener('keydown', (e) => {
   if (e.code === 'Space' && isGameOver) {
     startGame();
   }
+});
+
+// TOUCH CONTROL - Screen එක touch කලොත්
+game.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (!isGameStarted) startGame();
+  else if (isGameOver) startGame();
+  else jump();
+});
+
+// MOUSE CLICK CONTROL - PC වල click කරලත් පනිනවා
+game.addEventListener('click', () => {
+  if (!isGameStarted) startGame();
+  else if (isGameOver) startGame();
+  else jump();
 });
 
 gameLoop();
