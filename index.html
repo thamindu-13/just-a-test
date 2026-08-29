@@ -3,248 +3,223 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Car Jump Game</title>
+<title>WOXIA - 3D Racing</title>
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
-  body {
-    background: linear-gradient(to top, #87CEEB 0%, #E0F6FF 50%, #87CEEB 100%);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; touch-action: none; }
+  body { background: #000; overflow: hidden; }
+  canvas { display: block; }
+
+  /* Loading Screen */
+  #loading {
+    position: fixed; width: 100%; height: 100%; background: linear-gradient(135deg, #1e3c72, #2a5298);
+    display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;
   }
-  #game {
-    width: 100%;
-    max-width: 800px;
-    height: 300px;
-    border: 3px solid #333;
-    background: #f0f0f0;
-    position: relative;
-    overflow: hidden;
+  #loading h1 {
+    font-size: 60px; color: #fff; text-shadow: 0 0 20px #00f0ff; margin-bottom: 30px;
+    animation: glow 2s ease-in-out infinite;
   }
-  .ground {
-    position: absolute;
-    bottom: 0;
-    width: 200%;
-    height: 40px;
-    background: repeating-linear-gradient(90deg, #555 0px, #555 20px, #777 20px, #777 40px);
-    animation: moveGround 2s linear infinite;
+  @keyframes glow { 0%,100%{text-shadow:0 0 20px #00f0ff} 50%{text-shadow:0 0 40px #00f0ff} }
+  #loadingBar { width: 300px; height: 8px; background: #333; border-radius: 10px; overflow: hidden; }
+  #loadingFill { height: 100%; width: 0%; background: linear-gradient(90deg, #00f0ff, #ff00ff); transition: width 0.3s; }
+
+  /* Vehicle Select */
+  #vehicleSelect {
+    position: fixed; width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+    display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 900;
   }
-  @keyframes moveGround {
-    from { transform: translateX(0); }
-    to { transform: translateX(-40px); }
-  }
-  #car {
-    width: 60px;
-    height: 30px;
-    background: red;
-    border-radius: 8px 8px 3px 3px;
-    position: absolute;
-    bottom: 40px;
-    left: 80px;
-    transition: transform 0.1s;
-  }
-  #car.jump {
-    transform: rotate(-5deg);
-  }
-  #car::before, #car::after {
-    content: '';
-    position: absolute;
-    width: 15px;
-    height: 15px;
-    background: #333;
-    border-radius: 50%;
-    bottom: -8px;
-    animation: wheel 0.3s linear infinite;
-  }
-  #car::before { left: 5px; }
-  #car::after { right: 5px; }
-  @keyframes wheel {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .stone {
-    width: 25px;
-    height: 25px;
-    background: #444;
-    border-radius: 3px;
-    position: absolute;
-    bottom: 40px;
-  }
-  #score {
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
-  }
-  #gameOver {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 32px;
-    font-weight: bold;
-    color: #d00;
-    display: none;
-    text-align: center;
-  }
-  #start {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 18px;
-    color: #333;
-    text-align: center;
-  }
+  #vehicleSelect h2 { color: #fff; font-size: 32px; margin-bottom: 20px; }
+  #vehicleBox { width: 90%; max-width: 400px; height: 250px; background: #111; border: 2px solid #00f0ff; border-radius: 15px; display: flex; justify-content: center; align-items: center; position: relative; }
+ .navBtn { position: absolute; top: 50%; transform: translateY(-50%); width: 50px; height: 50px; background: #00f0ff; border: none; border-radius: 50%; font-size: 24px; color: #000; }
+  #leftBtn { left: -25px; } #rightBtn { right: -25px; }
+  #vehicleInfo { color: #fff; text-align: center; margin: 20px; }
+  #goBtn { padding: 15px 50px; background: linear-gradient(90deg, #ff00ff, #00f0ff); border: none; border-radius: 30px; font-size: 20px; font-weight: bold; color: #fff; }
+
+  /* Game UI */
+  #gameUI { position: fixed; top: 0; width: 100%; display: none; z-index: 800; }
+  #topBar { display: flex; justify-content: space-between; padding: 15px; color: #fff; font-size: 18px; font-weight: bold; }
+  #controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; }
+ .ctrlBtn { width: 70px; height: 70px; background: rgba(0,240,255,0.3); border: 2px solid #00f0ff; border-radius: 50%; color: #fff; font-size: 24px; }
+  #brake { background: rgba(255,0,0,0.3); border-color: red; }
 </style>
 </head>
 <body>
-<div id="game">
-  <div class="ground"></div>
-  <div id="car"></div>
-  <div id="score">Score: 0</div>
-  <div id="start">Screen එක Touch කරන්න<br>හෝ UP Arrow ඔබන්න</div>
-  <div id="gameOver">GAME OVER<br><span style="font-size:18px">Touch කරන්න නැවත පටන් ගන්න</span></div>
+
+<div id="loading">
+  <h1>WOXIA</h1>
+  <div id="loadingBar"><div id="loadingFill"></div></div>
 </div>
 
+<div id="vehicleSelect">
+  <h2>CHOOSE YOUR RIDE</h2>
+  <div id="vehicleBox">
+    <button class="navBtn" id="leftBtn">←</button>
+    <div id="vehiclePreview"></div>
+    <button class="navBtn" id="rightBtn">→</button>
+  </div>
+  <div id="vehicleInfo">
+    <h3 id="vName">Ferrari</h3>
+    <p id="vSpeed">Speed: 320 km/h</p>
+    <p id="vAccel">Acceleration: 9/10</p>
+  </div>
+  <button id="goBtn">GO!</button>
+</div>
+
+<div id="gameUI">
+  <div id="topBar">
+    <div>Time: <span id="timer">60</span>s</div>
+    <div>Speed: <span id="speed">0</span> km/h</div>
+    <div>Score: <span id="score">0</span></div>
+  </div>
+  <div id="controls">
+    <button class="ctrlBtn" id="left">←</button>
+    <button class="ctrlBtn" id="brake">B</button>
+    <button class="ctrlBtn" id="right">→</button>
+    <button class="ctrlBtn" id="accel">↑</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-let car = document.getElementById('car');
-let game = document.getElementById('game');
-let scoreEl = document.getElementById('score');
-let gameOverEl = document.getElementById('gameOver');
-let startEl = document.getElementById('start');
+let scene, camera, renderer, car, road, clock;
+let speed = 0, maxSpeed = 320, accelerating = false, braking = false;
+let lane = 0, targetX = 0; // -1 left, 0 center, 1 right
+let timeLeft = 60, score = 0, gameRunning = false;
+let vehicles = [
+  {name: "Ferrari", speed: 320, accel: 9, color: 0xff0000},
+  {name: "Mitsubishi", speed: 250, accel: 7, color: 0x00ff00},
+  {name: "KDH Van", speed: 140, accel: 4, color: 0xffffff},
+  {name: "Metro Bus", speed: 100, accel: 3, color: 0xffff00}
+];
+let currentVehicle = 0;
 
-let isJumping = false;
-let isGameOver = true;
-let isGameStarted = false;
-let score = 0;
-let stones = [];
-let gameSpeed = 6;
-let stoneInterval;
-
-function jump() {
-  if (isJumping || isGameOver) return;
-  isJumping = true;
-  car.classList.add('jump');
-  let jumpHeight = 0;
-  let up = true;
-  
-  let jumpInterval = setInterval(() => {
-    if (up) {
-      jumpHeight += 8;
-      car.style.bottom = 40 + jumpHeight + 'px';
-      if (jumpHeight >= 100) up = false;
-    } else {
-      jumpHeight -= 8;
-      car.style.bottom = 40 + jumpHeight + 'px';
-      if (jumpHeight <= 0) {
-        car.style.bottom = '40px';
-        car.classList.remove('jump');
-        clearInterval(jumpInterval);
-        isJumping = false;
-      }
-    }
-  }, 20);
-}
-
-function createStone() {
-  if (isGameOver) return;
-  let stone = document.createElement('div');
-  stone.classList.add('stone');
-  stone.style.left = game.offsetWidth + 'px';
-  game.appendChild(stone);
-  stones.push(stone);
-}
-
-function moveStones() {
-  stones.forEach((stone, index) => {
-    let stoneLeft = parseInt(stone.style.left);
-    stone.style.left = stoneLeft - gameSpeed + 'px';
-    
-    // Collision check
-    let carRect = car.getBoundingClientRect();
-    let stoneRect = stone.getBoundingClientRect();
-    
-    if (
-      carRect.left < stoneRect.right - 5 &&
-      carRect.right > stoneRect.left + 5 &&
-      carRect.bottom > stoneRect.top + 5 &&
-      carRect.top < stoneRect.bottom - 5
-    ) {
-      gameOver();
-    }
-    
-    if (stoneLeft < -30) {
-      stone.remove();
-      stones.splice(index, 1);
-      score++;
-      scoreEl.innerText = 'Score: ' + score;
-      if (score % 5 === 0) gameSpeed += 0.4; // speed වැඩි වෙනවා
-    }
-  });
-}
-
-function gameLoop() {
-  if (!isGameOver) {
-    moveStones();
+// Loading
+let load = 0;
+let loadInterval = setInterval(()=>{
+  load += 5;
+  document.getElementById('loadingFill').style.width = load + '%';
+  if(load >= 100){
+    clearInterval(loadInterval);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('vehicleSelect').style.display = 'flex';
+    updateVehiclePreview();
   }
-  requestAnimationFrame(gameLoop);
+}, 100);
+
+// Vehicle Selection
+function updateVehiclePreview(){
+  let v = vehicles[currentVehicle];
+  document.getElementById('vName').innerText = v.name;
+  document.getElementById('vSpeed').innerText = 'Speed: ' + v.speed + ' km/h';
+  document.getElementById('vAccel').innerText = 'Acceleration: ' + v.accel + '/10';
+  document.getElementById('vehiclePreview').innerHTML = `<div style="width:150px;height:70px;background:#${v.color.toString(16)};border-radius:10px;box-shadow:0 0 20px #${v.color.toString(16)}"></div>`;
+}
+document.getElementById('leftBtn').onclick = ()=>{ currentVehicle = (currentVehicle + 3) % 4; updateVehiclePreview(); }
+document.getElementById('rightBtn').onclick = ()=>{ currentVehicle = (currentVehicle + 1) % 4; updateVehiclePreview(); }
+
+document.getElementById('goBtn').onclick = ()=>{
+  document.getElementById('vehicleSelect').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'block';
+  initGame();
+  startGame();
 }
 
-function gameOver() {
-  isGameOver = true;
-  clearInterval(stoneInterval);
-  gameOverEl.style.display = 'block';
-  stones.forEach(s => s.remove());
-  stones = [];
-}
+function initGame(){
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87CEEB);
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
 
-function startGame() {
-  isGameOver = false;
-  isGameStarted = true;
-  score = 0;
-  gameSpeed = 6;
-  scoreEl.innerText = 'Score: 0';
-  gameOverEl.style.display = 'none';
-  startEl.style.display = 'none';
-  
-  stoneInterval = setInterval(() => {
-    if (!isGameOver) createStone();
-  }, 1400);
-}
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  let dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(5,10,7);
+  scene.add(dirLight);
 
-// KEYBOARD CONTROL
-document.addEventListener('keydown', (e) => {
-  if (e.code === 'ArrowUp') {
-    if (!isGameStarted) startGame();
-    jump();
+  // Road
+  let roadGeo = new THREE.PlaneGeometry(12, 500);
+  let roadMat = new THREE.MeshLambertMaterial({color: 0x333});
+  road = new THREE.Mesh(roadGeo, roadMat);
+  road.rotation.x = -Math.PI/2;
+  scene.add(road);
+
+  // Road lines
+  for(let i=0; i<20; i++){
+    let line = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.01, 5), new THREE.MeshBasicMaterial({color:0xffff00}));
+    line.position.set(0, 0.01, -i*25);
+    scene.add(line);
   }
-  if (e.code === 'Space' && isGameOver) {
-    startGame();
-  }
-});
 
-// TOUCH CONTROL - Screen එක touch කලොත්
-game.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  if (!isGameStarted) startGame();
-  else if (isGameOver) startGame();
-  else jump();
-});
+  // Player Car
+  let carGeo = new THREE.BoxGeometry(1, 0.5, 2);
+  let carMat = new THREE.MeshLambertMaterial({color: vehicles[currentVehicle].color});
+  car = new THREE.Mesh(carGeo, carMat);
+  car.position.y = 0.5;
+  scene.add(car);
 
-// MOUSE CLICK CONTROL - PC වල click කරලත් පනිනවා
-game.addEventListener('click', () => {
-  if (!isGameStarted) startGame();
-  else if (isGameOver) startGame();
-  else jump();
-});
+  camera.position.set(0, 5, 10);
+  camera.lookAt(0,0,0);
+  clock = new THREE.Clock();
+  animate();
+}
 
-gameLoop();
+function startGame(){
+  gameRunning = true;
+  maxSpeed = vehicles[currentVehicle].speed;
+  let gameTimer = setInterval(()=>{
+    if(!gameRunning) clearInterval(gameTimer);
+    timeLeft--;
+    document.getElementById('timer').innerText = timeLeft;
+    if(timeLeft <= 0){
+      gameRunning = false;
+      alert('Time Up! Score: ' + score);
+    }
+  }, 1000);
+}
+
+// Controls
+function move(dir){
+  if(!gameRunning) return;
+  lane += dir;
+  if(lane < -1) lane = -1;
+  if(lane > 1) lane = 1;
+  targetX = lane * 3;
+}
+document.getElementById('left').ontouchstart = ()=>move(-1);
+document.getElementById('right').ontouchstart = ()=>move(1);
+document.getElementById('accel').ontouchstart = ()=>accelerating=true;
+document.getElementById('accel').ontouchend = ()=>accelerating=false;
+document.getElementById('brake').ontouchstart = ()=>braking=true;
+document.getElementById('brake').ontouchend = ()=>braking=false;
+
+// Game Loop
+function animate(){
+  requestAnimationFrame(animate);
+  if(!gameRunning) return;
+
+  // Car movement
+  if(accelerating) speed += vehicles[currentVehicle].accel * 0.5;
+  if(braking) speed -= 5;
+  if(!accelerating) speed -= 0.5;
+  speed = Math.max(0, Math.min(speed, maxSpeed));
+
+  car.position.x += (targetX - car.position.x) * 0.1;
+  road.position.z += speed * 0.05;
+  if(road.position.z > 50) road.position.z = 0;
+
+  score += Math.floor(speed/10);
+  document.getElementById('speed').innerText = Math.floor(speed);
+  document.getElementById('score').innerText = score;
+
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', ()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
 </body>
 </html>
